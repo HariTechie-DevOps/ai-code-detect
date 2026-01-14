@@ -1,10 +1,8 @@
 package com.aicode.detect.service;
 
 import org.springframework.stereotype.Service;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 
 @Service
 public class FeatureExtractionService {
@@ -12,35 +10,33 @@ public class FeatureExtractionService {
     public Map<String, Object> extractFeatures(String code) {
         Map<String, Object> features = new HashMap<>();
         
-        // 1. Calculate Comment Density (AI Fingerprint)
-        int totalLines = code.split("\n").length;
-        int commentLines = countOccurrences(code, "//") + countOccurrences(code, "/*");
-        double commentRatio = (double) commentLines / totalLines;
+        // 1. Line Analysis
+        String[] lines = code.split("\n");
+        int totalLines = lines.length;
+        
+        // 2. AI Comment Phrase Detection
+        String[] aiPhrases = {
+            "this function", "the following code", "implements the logic",
+            "boilerplate", "demonstrates how to", "note that"
+        };
+        int aiPhraseCount = 0;
+        for (String phrase : aiPhrases) {
+            if (code.toLowerCase().contains(phrase)) aiPhraseCount++;
+        }
 
-        // 2. Identify "AI-Style" Variable Names
-        // Look for very long descriptive names (e.g., calculateUserTotalBalance)
-        int longVarNames = countPattern(code, "[a-z]+([A-Z][a-z]+){3,}"); 
+        // 3. Variable Name Length (AI uses long, descriptive names)
+        int longVarNames = 0;
+        Matcher m = Pattern.compile("\\b[a-zA-Z]{15,}\\b").matcher(code);
+        while (m.find()) longVarNames++;
 
-        // 3. Logic Density (Ratio of keywords to lines)
-        int keywords = countPattern(code, "\\b(public|private|static|if|else|for|while|return|class)\\b");
-        double logicDensity = (double) keywords / totalLines;
+        // 4. Boilerplate Check (AI almost always includes proper imports/headers)
+        boolean hasStandardHeader = code.contains("package") || code.contains("import");
 
-        features.put("commentRatio", commentRatio);
-        features.put("complexityScore", logicDensity);
-        features.put("perfectNamingCount", longVarNames);
-        features.put("isIndentationPerfect", !code.contains("\t") && code.contains("    "));
+        features.put("aiPhrasesFound", aiPhraseCount);
+        features.put("avgLineLength", code.length() / Math.max(1, totalLines));
+        features.put("longVariableCount", longVarNames);
+        features.put("hasProperStructure", hasStandardHeader);
 
         return features;
-    }
-
-    private int countOccurrences(String text, String match) {
-        return text.split(Pattern.quote(match), -1).length - 1;
-    }
-
-    private int countPattern(String text, String regex) {
-        Matcher matcher = Pattern.compile(regex).matcher(text);
-        int count = 0;
-        while (matcher.find()) count++;
-        return count;
     }
 }
