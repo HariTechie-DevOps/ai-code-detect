@@ -4,17 +4,15 @@ import com.aicode.detect.model.CodeSubmission;
 import com.aicode.detect.model.AnalysisResult;
 import com.aicode.detect.service.FeatureExtractionService;
 import com.aicode.detect.service.MLAnalysisService;
-import com.aicode.detect.service.LanguageParserService;
 import com.aicode.detect.service.ScoringService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
 public class CodeAnalysisController {
-
-    @Autowired
-    private LanguageParserService parserService;
 
     @Autowired
     private FeatureExtractionService featureService;
@@ -27,19 +25,19 @@ public class CodeAnalysisController {
 
     @PostMapping("/analyze")
     public AnalysisResult analyzeCode(@RequestBody CodeSubmission submission) {
-        // 1. Parse code to language-neutral AST
-        var ast = parserService.parseCode(submission.getCode(), submission.getLanguage());
+        // 1. REAL-TIME EXTRACTION
+        // We now pass the ACTUAL code text (submission.getCode()) 
+        // instead of an empty AST object.
+        Map<String, Object> features = featureService.extractFeatures(submission.getCode());
 
-        // 2. Extract Phase-1 features
-        var features = featureService.extractFeatures(ast);
-
-        // 3. Optional Phase-2 ML analysis
+        // 2. ML EVALUATION
+        // The ML service now has real data (like aiPhrasesFound) to look at.
         double mlScore = mlService.getMLScore(features);
 
-        // 4. Phase-1.5 scoring
+        // 3. DYNAMIC SCORING
+        // The scoring service calculates a unique result based on the code provided.
         AnalysisResult result = scoringService.calculateScore(features, mlScore);
 
-        // 5. Return final JSON
         return result;
     }
 }
