@@ -1,23 +1,24 @@
 package com.aicode.detect.model;
 
+import jakarta.persistence.*;
 import java.util.Map;
 
+@Entity
+@Table(name = "analysis_results")
 public class AnalysisResult {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // Added for Database tracking
+
     private double aiProbability;
     private String confidence;
+    
+    @Transient // We use @Transient because Maps are hard to store directly in one SQL column
     private Map<String, Object> features;
+    
+    @Column(length = 1000) // Allows for long, detailed explanations
     private String explanation;
 
-    // Getters and setters
-    public double getAiProbability() { return aiProbability; }
-    public void setAiProbability(double aiProbability) { this.aiProbability = aiProbability; }
-
-    public String getConfidence() { return confidence; }
-    public void setConfidence(String confidence) { this.confidence = confidence; }
-
-    public Map<String, Object> getFeatures() { return features; }
-    public void setFeatures(Map<String, Object> features) { this.features = features; }
-
-    public String getExplanation() { return explanation; }
-    public void setExplanation(String explanation) { this.explanation = explanation; }
+    // Standard Getters and Setters...
 }
